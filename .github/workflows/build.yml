@@ -14,26 +14,26 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Use this repo's west.yml as the manifest (contains Zephyr + ZMK projects)
-      - name: Initialize west (local manifest)
+      - name: Initialize west (use this repo as manifest)
         run: |
           west init -l .
           west update
+          # Make Zephyr visible to CMake:
+          west zephyr-export
+          echo "ZEPHYR_BASE=$(pwd)/zephyr" >> $GITHUB_ENV
 
-      # Defensive fallback: if ZMK app folder isn't present, clone it explicitly
       - name: Ensure ZMK source is available
         run: |
           if [ ! -d "zmk/app" ]; then
-            echo "zmk/app not found after west update; cloning ZMK explicitly..."
+            echo "zmk/app not found; cloning ZMK explicitly..."
             rm -rf zmk
             git clone https://github.com/zmkfirmware/zmk.git zmk
           fi
-          test -d zmk/app || (echo "ERROR: zmk/app still missing" && exit 1)
-          ls -la zmk | head -n 50
-          ls -la zmk/app | head -n 50
+          test -d zmk/app
 
       - name: Build (nice_nano_v2 + supermini_3key)
         env:
+          ZEPHYR_BASE: ${{ env.ZEPHYR_BASE }}
           ZMK_CONFIG: ${{ github.workspace }}/config
         run: |
           west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=supermini_3key -DZMK_CONFIG="$ZMK_CONFIG"
