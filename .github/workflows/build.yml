@@ -1,0 +1,37 @@
+name: Build ZMK (SuperMini 3-Key)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: zmkfirmware/zmk-build-arm:3.5
+    steps:
+      - name: Checkout config
+        uses: actions/checkout@v4
+
+      - name: Setup West workspace
+        run: |
+          west init -m https://github.com/zmkfirmware/zmk.git workspace
+          cd workspace
+          west update
+
+      - name: Copy config into app
+        run: |
+          mkdir -p workspace/app/config
+          rsync -a --exclude='.git' ./config/ workspace/app/config/
+
+      - name: Build (nice_nano_v2 + shield)
+        run: |
+          cd workspace/app
+          west build -p -b nice_nano_v2 -- -DSHIELD=supermini_3key
+          cp build/zephyr/zmk.uf2 $GITHUB_WORKSPACE/supermini_3key_nice_nano_v2.uf2
+
+      - name: Upload UF2
+        uses: actions/upload-artifact@v4
+        with:
+          name: supermini_3key_uf2
+          path: supermini_3key_nice_nano_v2.uf2
