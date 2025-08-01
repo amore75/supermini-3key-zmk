@@ -2,10 +2,21 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
   projects:
+    # Pull Zephyr; this provides the 'west build' extension and toolchain glue.
+    - name: zephyr
+      remote: zephyrproject-rtos
+      revision: v3.5.0
+      import: true
+      path: zephyr
+
+    # Pull ZMK (the app source)
     - name: zmk
       remote: zmkfirmware
       revision: main
       path: zmk
+
   self:
     path: .
