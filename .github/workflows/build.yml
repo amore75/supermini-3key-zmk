@@ -10,24 +10,19 @@ jobs:
     container:
       image: zmkfirmware/zmk-build-arm:3.5
     steps:
-      - name: Checkout config
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup West workspace
+      - name: Initialize west (use this repo as manifest)
         run: |
-          west init -m https://github.com/zmkfirmware/zmk.git workspace
-          cd workspace
+          west init -l .
           west update
 
-      - name: Copy config into app
-        run: |
-          mkdir -p workspace/app/config
-          rsync -a --exclude='.git' ./config/ workspace/app/config/
-
       - name: Build (nice_nano_v2 + shield)
+        env:
+          ZMK_CONFIG: ${{ github.workspace }}/config
         run: |
-          cd workspace/app
-          west build -p -b nice_nano_v2 -- -DSHIELD=supermini_3key
+          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=supermini_3key -DZMK_CONFIG=$ZMK_CONFIG
           cp build/zephyr/zmk.uf2 $GITHUB_WORKSPACE/supermini_3key_nice_nano_v2.uf2
 
       - name: Upload UF2
